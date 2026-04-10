@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lương Minh Đức — Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0d0b1a;
+  --s1:      rgba(255,255,255,.055);
+  --s2:      rgba(255,255,255,.09);
+  --bd:      rgba(255,255,255,.09);
+  --p1:      #7c3aed;
+  --p2:      #4f46e5;
+  --acc:     #a78bfa;
+  --tx:      #e2e8f0;
+  --mu:      #94a3b8;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,.22) 0%, transparent 65%);
+  top: -250px; left: -250px;
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,70,229,.18) 0%, transparent 65%);
+  bottom: -200px; right: -200px;
+  pointer-events: none; z-index: 0;
+}
+.wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 0 24px 100px; }
+
+/* Hero */
+.hero { text-align: center; padding: 72px 0 52px; }
+.av-ring {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 28px;
+}
+.av-ring::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #7c3aed, #06b6d4, #ec4899, #7c3aed);
+  animation: spin 5s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.av-img, .av-fb {
+  position: relative;
+  width: 148px; height: 148px;
+  border-radius: 50%;
+  border: 5px solid var(--bg);
+  object-fit: cover;
+  display: block;
+}
+.av-fb {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--p1), var(--p2));
+  font-size: 3.2rem; font-weight: 800; color: #fff;
+}
+.hero h1 {
+  font-size: clamp(2.1rem, 5vw, 3.2rem);
+  font-weight: 800;
+  background: linear-gradient(130deg, #fff 10%, var(--acc) 90%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 14px; line-height: 1.15;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, var(--p1), var(--p2));
+  color: #fff;
+  font-size: .82rem; font-weight: 700;
+  padding: 7px 22px; border-radius: 999px;
+  letter-spacing: .05em;
+}
+
+/* Divider */
+.div { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--bd), transparent); margin: 48px 0; }
+
+/* Section label */
+.slabel {
+  font-size: .68rem; font-weight: 700; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--acc);
+  display: flex; align-items: center; gap: 12px; margin-bottom: 22px;
+}
+.slabel::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
+
+/* Cards */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media(max-width:580px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  background: var(--s1);
+  border: 1px solid var(--bd);
+  border-radius: 22px;
+  padding: 30px;
+  backdrop-filter: blur(24px);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.card:hover { transform: translateY(-5px); box-shadow: 0 24px 64px rgba(124,58,237,.16); }
+.ci { font-size: 2.1rem; margin-bottom: 14px; }
+.card h3 { font-size: .95rem; font-weight: 700; color: var(--acc); margin-bottom: 10px; letter-spacing: .02em; }
+.card p  { font-size: .9rem; color: var(--mu); line-height: 1.75; }
+
+/* Contact */
+.cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:540px) { .cgrid { grid-template-columns: 1fr; } }
+.ci-box {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: 16px; padding: 17px 20px;
+  backdrop-filter: blur(18px);
+}
+.cicon {
+  width: 42px; height: 42px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; flex-shrink: 0;
+}
+.cp  { background: rgba(16,185,129,.14); }
+.ce  { background: rgba(59,130,246,.14); }
+.cf  { background: rgba(99,102,241,.14); }
+.cz  { background: rgba(236,72,153,.14); }
+.clbl { font-size: .7rem; color: var(--mu); margin-bottom: 2px; font-weight: 500; }
+.cval { font-size: .88rem; font-weight: 700; color: var(--tx); }
+
+/* Credit */
+.credit {
+  margin-top: 44px;
+  background: linear-gradient(135deg, rgba(124,58,237,.1), rgba(79,70,229,.06));
+  border: 1px solid rgba(167,139,250,.18);
+  border-radius: 18px; padding: 22px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+.credit .lbl { font-size: .8rem; color: var(--mu); }
+.credit .val { font-size: .9rem; font-weight: 700; color: var(--acc); }
+.credit .tag { font-size: .74rem; color: #475569; background: rgba(255,255,255,.05); padding: 4px 12px; border-radius: 99px; }
+
+/* Submit button */
+#btn {
+  position: fixed; bottom: 28px; right: 28px; z-index: 999;
+  display: flex; align-items: center; gap: 9px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff; border: none; border-radius: 56px;
+  padding: 14px 28px; font-family: inherit;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 8px 32px rgba(245,158,11,.38);
+  transition: transform .2s, box-shadow .2s, opacity .2s;
+}
+#btn:hover    { transform: translateY(-3px) scale(1.04); box-shadow: 0 14px 44px rgba(245,158,11,.52); }
+#btn:active   { transform: scale(.97); }
+#btn:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+
+/* Status overlay */
+#ov {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(13,11,26,.85); backdrop-filter: blur(10px);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 18px; color: #fff;
+}
+#ov.show { display: flex; }
+.spin2 {
+  width: 52px; height: 52px;
+  border: 4px solid rgba(255,255,255,.15);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+#ov-msg { font-size: 1.05rem; font-weight: 600; color: var(--acc); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <div class="av-ring">
+      <img class="av-img" src="https://trangden.vn/agentsee/lop-hoc/api/avatars/2067_avatar_md.jpg" alt="Lương Minh Đức"
+           onerror="this.style.display='none';document.getElementById('avfb').style.display='flex'"/>
+      <div class="av-fb" id="avfb" style="display:none">Đ</div>
+    </div>
+    <h1>Lương Minh Đức</h1>
+    <span class="badge">🎓 Học viên Agent SEE</span>
+  </section>
+
+  <hr class="div"/>
+
+  <p class="slabel">Về bản thân</p>
+  <div class="cards">
+    <div class="card">
+      <div class="ci">🏃‍♀️</div>
+      <h3>Sở thích</h3>
+      <p>Yoga, Đọc sách self-help</p>
+    </div>
+    <div class="card">
+      <div class="ci">🌅</div>
+      <h3>Thói quen hàng ngày</h3>
+      <p>Thiền 10 phút/ngày, Đọc 30 phút trước khi ngủ</p>
+    </div>
+  </div>
+
+  <hr class="div"/>
+
+  <p class="slabel">Liên hệ</p>
+  <div class="cgrid">
+    <div class="ci-box">
+      <div class="cicon cp">📞</div>
+      <div>
+        <div class="clbl">Điện thoại</div>
+        <div class="cval" id="c-phone">—</div>
+      </div>
+    </div>
+    <div class="ci-box">
+      <div class="cicon ce">✉️</div>
+      <div>
+        <div class="clbl">Email</div>
+        <div class="cval" id="c-email">—</div>
+      </div>
+    </div>
+    <div class="ci-box">
+      <div class="cicon cf">📘</div>
+      <div>
+        <div class="clbl">Facebook</div>
+        <div class="cval" id="c-fb">—</div>
+      </div>
+    </div>
+    <div class="ci-box">
+      <div class="cicon cz">💬</div>
+      <div>
+        <div class="clbl">Zalo</div>
+        <div class="cval" id="c-zalo">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="credit">
+    <span class="lbl">Trang được tạo bởi</span>
+    <span class="val">✨ Agent SEE Student</span>
+    <span class="tag">AI Agent SEE · 2026</span>
+  </div>
+
+</div>
+
+<div id="ov"><div class="spin2"></div><div id="ov-msg">Đang xử lý…</div></div>
+<button id="btn">📸 Chụp hình nộp bài tập</button>
+
+<script src="/html2canvas.min.js"></script>
+<script>
+  const SUBMIT_URL  = "https://trangden.vn/agentsee/api/bai-tap/3367/2a2a045fedc3446bd9ba7f08f4b7ff6e/tuan-1/quest-1/step-1/submit";
+  const MY_INFO     = {"quest_id":null,"profile":null};
+  const FRIEND_INFO = {"fullname":"Lương Minh Đức","avatar_url":"https://trangden.vn/agentsee/lop-hoc/api/avatars/2067_avatar_md.jpg","quest_id":"VHJBbmdEZU4yMDI2IYbflg","title":"Học viên Agent SEE","hobbies":"Yoga, Đọc sách self-help","habits":"Thiền 10 phút/ngày, Đọc 30 phút trước khi ngủ","phone":"","email":"","facebook":"","zalo_name":""};
+
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn = document.getElementById('btn');
+    const ov  = document.getElementById('ov');
+    const msg = document.getElementById('ov-msg');
+    btn.disabled = true;
+    ov.classList.add('show');
+
+    try {
+      msg.textContent = 'Đang chụp màn hình…';
+      btn.style.visibility = 'hidden';
+      ov.style.opacity = '0';
+
+      const canvas = await html2canvas(document.documentElement, {
+        useCORS: true, allowTaint: true, scale: 1, logging: false,
+        windowWidth: document.documentElement.scrollWidth,
+      });
+
+      btn.style.visibility = '';
+      ov.style.opacity = '';
+      msg.textContent = 'Đang gửi lên server…';
+
+      await new Promise((res, rej) => {
+        canvas.toBlob(async (blob) => {
+          try {
+            const fd = new FormData();
+            fd.append('screenshot',   blob, 'screenshot.png');
+            fd.append('my_info',      JSON.stringify(MY_INFO));
+            fd.append('friend_info',  JSON.stringify(FRIEND_INFO));
+
+            const r    = await fetch(SUBMIT_URL, { method: 'POST', body: fd });
+            const text = await r.text();
+            let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+            if (r.ok) {
+              msg.textContent = '✅ Nộp bài thành công!';
+              setTimeout(() => { ov.classList.remove('show'); btn.disabled = false; }, 3000);
+              res(data);
+            } else {
+              msg.textContent = '❌ Lỗi ' + r.status + ': ' + (data.message || JSON.stringify(data));
+              btn.disabled = false;
+              res(null);
+            }
+          } catch (e) {
+            msg.textContent = '❌ ' + e.message;
+            btn.disabled = false;
+            rej(e);
+          }
+        }, 'image/png');
+      });
+    } catch (e) {
+      msg.textContent = '❌ ' + e.message;
+      btn.disabled = false;
+      console.error(e);
+    }
+  });
+</script>
+</body>
+</html>
