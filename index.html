@@ -261,66 +261,191 @@ body::after {
 <div id="ov"><div class="spin2"></div><div id="ov-msg">Đang xử lý…</div></div>
 <button id="btn">📸 Chụp hình nộp bài tập</button>
 
-<script src="/html2canvas.min.js"></script>
+<!-- html2canvas: try local bundle first, fallback to CDN -->
 <script>
-  const SUBMIT_URL  = "https://trangden.vn/agentsee/api/bai-tap/3367/2a2a045fedc3446bd9ba7f08f4b7ff6e/tuan-1/quest-1/step-1/submit";
-  const MY_INFO     = {"quest_id":null,"profile":null};
-  const FRIEND_INFO = {"fullname":"Lương Minh Đức","avatar_url":"https://trangden.vn/agentsee/lop-hoc/api/avatars/2067_avatar_md.jpg","quest_id":"VHJBbmdEZU4yMDI2IYbflg","title":"Học viên Agent SEE","hobbies":"Yoga, Đọc sách self-help","habits":"Thiền 10 phút/ngày, Đọc 30 phút trước khi ngủ","phone":"","email":"","facebook":"","zalo_name":""};
+  (function() {
+    var s = document.createElement('script');
+    // Works for both file:// and http:// protocols
+    s.src = 'html2canvas.min.js';
+    s.onerror = function() {
+      var s2 = document.createElement('script');
+      s2.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+<script>
+  // ── Config ──────────────────────────────────────────────────────────────
+  const BASE      = 'https://trangden.vn/agentsee';
+  const MY_ID     = '3367';
+  const MY_TOKEN  = '2a2a045fedc3446bd9ba7f08f4b7ff6e';
+  const F_ID      = '2067';
+  const F_QUEST   = 'VHJBbmdEZU4yMDI2IYbflg';
 
-  document.getElementById('btn').addEventListener('click', async () => {
-    const btn = document.getElementById('btn');
-    const ov  = document.getElementById('ov');
-    const msg = document.getElementById('ov-msg');
-    btn.disabled = true;
-    ov.classList.add('show');
+  const STEP1_URL  = `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/step-1`;
+  const SUBMIT_URL = `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/step-1/submit`;
 
+  const FRIEND_ENDPOINTS = [
+    `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend-info`,
+    `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend`,
+    `${BASE}/lop-hoc/api/students/${F_ID}`,
+    `${BASE}/lop-hoc/api/profiles/${F_ID}`,
+    `${BASE}/api/public/quest/${F_QUEST}`,
+    `${BASE}/lop-hoc/api/quest/${F_QUEST}`,
+    `${BASE}/lop-hoc/api/share/${F_QUEST}`,
+  ];
+
+  const FAKE = new Set([
+    'zalo_user','friend_2067@example.com','0900-xxx-xxx',
+    'fb.com/user_2067','user_2067','',
+  ]);
+
+  // Runtime state — populated by initPage()
+  let MY_INFO     = null;
+  let FRIEND_INFO = {
+    fullname:  'Lương Minh Đức',
+    avatar_url:`${BASE}/lop-hoc/api/avatars/${F_ID}_avatar_md.jpg`,
+    quest_id:  F_QUEST,
+    title:     'Học viên Agent SEE',
+    hobbies:   'Yoga, Đọc sách self-help',
+    habits:    'Thiền 10 phút/ngày, Đọc 30 phút trước khi ngủ',
+    phone: '', email: '', facebook: '', zalo_name: '',
+  };
+
+  // ── DOM helpers ─────────────────────────────────────────────────────────
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val || '—';
+  }
+  function setLoading(id) {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = '⏳'; el.style.opacity = '.5'; }
+  }
+  function setDone(id, val) {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val || '—'; el.style.opacity = ''; }
+  }
+
+  // ── Auto-load data on page open ─────────────────────────────────────────
+  async function initPage() {
+    // Show loading state for contact fields
+    ['c-phone','c-email','c-fb','c-zalo'].forEach(setLoading);
+
+    // Step 1: get MY profile
     try {
-      msg.textContent = 'Đang chụp màn hình…';
-      btn.style.visibility = 'hidden';
-      ov.style.opacity = '0';
-
-      const canvas = await html2canvas(document.documentElement, {
-        useCORS: true, allowTaint: true, scale: 1, logging: false,
-        windowWidth: document.documentElement.scrollWidth,
-      });
-
-      btn.style.visibility = '';
-      ov.style.opacity = '';
-      msg.textContent = 'Đang gửi lên server…';
-
-      await new Promise((res, rej) => {
-        canvas.toBlob(async (blob) => {
-          try {
-            const fd = new FormData();
-            fd.append('screenshot',   blob, 'screenshot.png');
-            fd.append('my_info',      JSON.stringify(MY_INFO));
-            fd.append('friend_info',  JSON.stringify(FRIEND_INFO));
-
-            const r    = await fetch(SUBMIT_URL, { method: 'POST', body: fd });
-            const text = await r.text();
-            let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-            if (r.ok) {
-              msg.textContent = '✅ Nộp bài thành công!';
-              setTimeout(() => { ov.classList.remove('show'); btn.disabled = false; }, 3000);
-              res(data);
-            } else {
-              msg.textContent = '❌ Lỗi ' + r.status + ': ' + (data.message || JSON.stringify(data));
-              btn.disabled = false;
-              res(null);
-            }
-          } catch (e) {
-            msg.textContent = '❌ ' + e.message;
-            btn.disabled = false;
-            rej(e);
-          }
-        }, 'image/png');
-      });
+      const r = await fetch(STEP1_URL, { method: 'POST' });
+      if (r.ok) {
+        MY_INFO = await r.json();
+        const name = MY_INFO?.profile?.fullname || MY_INFO?.fullname || '';
+        const title = MY_INFO?.profile?.title   || MY_INFO?.title    || '';
+        if (name) {
+          const el = document.querySelector('.credit .val');
+          if (el) el.textContent = '✨ ' + name + (title ? ' — ' + title : '');
+        }
+        console.log('✓ my_info loaded:', MY_INFO);
+      }
     } catch (e) {
-      msg.textContent = '❌ ' + e.message;
-      btn.disabled = false;
-      console.error(e);
+      console.warn('step-1 failed (CORS or network):', e.message);
     }
+
+    // Step 0: find real friend data
+    for (const url of FRIEND_ENDPOINTS) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (!data || typeof data !== 'object') continue;
+
+        let improved = false;
+        for (const [k, v] of Object.entries(data)) {
+          if (v && !FAKE.has(String(v))) {
+            FRIEND_INFO[k] = v;
+            if (['phone','email','zalo','zalo_name','facebook'].includes(k)) improved = true;
+          }
+        }
+        if (improved) {
+          console.log('✓ real friend data from:', url.split('/').slice(-2).join('/'));
+          break;
+        }
+      } catch (e) { /* continue */ }
+    }
+
+    // Update contact DOM
+    setDone('c-phone', FRIEND_INFO.phone);
+    setDone('c-email', FRIEND_INFO.email);
+    setDone('c-fb',    FRIEND_INFO.facebook || FRIEND_INFO.facebook_url);
+    setDone('c-zalo',  FRIEND_INFO.zalo_name || FRIEND_INFO.zalo);
+
+    console.log('✓ friend_info:', FRIEND_INFO);
+  }
+
+  document.addEventListener('DOMContentLoaded', initPage);
+
+  // ── Submit button ────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn').addEventListener('click', async () => {
+      const btn = document.getElementById('btn');
+      const ov  = document.getElementById('ov');
+      const msg = document.getElementById('ov-msg');
+
+      if (typeof html2canvas !== 'function') {
+        alert('html2canvas chưa load xong, thử lại sau 2 giây.');
+        return;
+      }
+
+      btn.disabled = true;
+      ov.classList.add('show');
+
+      try {
+        msg.textContent = 'Đang chụp màn hình…';
+        btn.style.visibility = 'hidden';
+        ov.style.opacity = '0';
+
+        const canvas = await html2canvas(document.documentElement, {
+          useCORS: true, allowTaint: true, scale: 1, logging: false,
+          windowWidth: document.documentElement.scrollWidth,
+        });
+
+        btn.style.visibility = '';
+        ov.style.opacity = '';
+        msg.textContent = 'Đang gửi lên server…';
+
+        await new Promise((res, rej) => {
+          canvas.toBlob(async (blob) => {
+            try {
+              const fd = new FormData();
+              fd.append('screenshot',  blob, 'screenshot.png');
+              fd.append('my_info',     JSON.stringify(MY_INFO || {}));
+              fd.append('friend_info', JSON.stringify(FRIEND_INFO));
+
+              const r    = await fetch(SUBMIT_URL, { method: 'POST', body: fd });
+              const text = await r.text();
+              let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+              if (r.ok) {
+                msg.textContent = '✅ Nộp bài thành công!';
+                console.log('Submit response:', data);
+                setTimeout(() => { ov.classList.remove('show'); btn.disabled = false; }, 3000);
+                res(data);
+              } else {
+                msg.textContent = '❌ Lỗi ' + r.status + ': ' + (data.message || JSON.stringify(data));
+                btn.disabled = false;
+                res(null);
+              }
+            } catch (e) {
+              msg.textContent = '❌ ' + e.message;
+              btn.disabled = false;
+              rej(e);
+            }
+          }, 'image/png');
+        });
+      } catch (e) {
+        msg.textContent = '❌ ' + e.message;
+        btn.disabled = false;
+        console.error(e);
+      }
+    });
   });
 </script>
 </body>
