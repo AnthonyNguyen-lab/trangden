@@ -286,22 +286,11 @@ body::after {
   const STEP1_URL  = `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/step-1`;
   const SUBMIT_URL = `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/step-1/submit`;
 
-  const FRIEND_ENDPOINTS = [
-    `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend-info`,
-    `${BASE}/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend`,
-    `${BASE}/lop-hoc/api/students/${F_ID}`,
-    `${BASE}/lop-hoc/api/profiles/${F_ID}`,
-    `${BASE}/api/public/quest/${F_QUEST}`,
-    `${BASE}/lop-hoc/api/quest/${F_QUEST}`,
-    `${BASE}/lop-hoc/api/share/${F_QUEST}`,
-  ];
-
   const FAKE = new Set([
     'zalo_user','friend_2067@example.com','0900-xxx-xxx',
     'fb.com/user_2067','user_2067','',
   ]);
 
-  // Runtime state — populated by initPage()
   let MY_INFO     = null;
   let FRIEND_INFO = {
     fullname:  'Lương Minh Đức',
@@ -314,10 +303,6 @@ body::after {
   };
 
   // ── DOM helpers ─────────────────────────────────────────────────────────
-  function setText(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val || '—';
-  }
   function setLoading(id) {
     const el = document.getElementById(id);
     if (el) { el.textContent = '⏳'; el.style.opacity = '.5'; }
@@ -327,57 +312,140 @@ body::after {
     if (el) { el.textContent = val || '—'; el.style.opacity = ''; }
   }
 
-  // ── Auto-load data on page open ─────────────────────────────────────────
+  // ── Deep-scan an object for friend contact fields ────────────────────────
+  function deepFindContact(obj, myName, depth) {
+    if (depth > 4 || !obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+    const CONTACT_KEYS = ['phone','email','zalo','zalo_name','facebook','facebook_url'];
+    const hasContact = CONTACT_KEYS.some(k => obj[k] && !FAKE.has(String(obj[k])));
+    const notMe = !obj.fullname || obj.fullname !== myName;
+    if (hasContact && notMe) return obj;
+    for (const v of Object.values(obj)) {
+      if (v && typeof v === 'object') {
+        const found = deepFindContact(v, myName, depth + 1);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  // ── Merge real values into FRIEND_INFO ──────────────────────────────────
+  function mergeFriend(data) {
+    if (!data || typeof data !== 'object') return false;
+    let improved = false;
+    for (const [k, v] of Object.entries(data)) {
+      if (v && !FAKE.has(String(v)) && typeof v !== 'object') {
+        FRIEND_INFO[k] = v;
+        if (['phone','email','zalo','zalo_name','facebook','facebook_url'].includes(k)) improved = true;
+      }
+    }
+    return improved;
+  }
+
+  // ── Safe fetch helper ────────────────────────────────────────────────────
+  async function tryFetch(url, opts = {}) {
+    try {
+      const r = await fetch(url, opts);
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  }
+
+  // ── Main init ────────────────────────────────────────────────────────────
   async function initPage() {
-    // Show loading state for contact fields
     ['c-phone','c-email','c-fb','c-zalo'].forEach(setLoading);
 
-    // Step 1: get MY profile
-    try {
-      const r = await fetch(STEP1_URL, { method: 'POST' });
-      if (r.ok) {
-        MY_INFO = await r.json();
-        const name = MY_INFO?.profile?.fullname || MY_INFO?.fullname || '';
-        const title = MY_INFO?.profile?.title   || MY_INFO?.title    || '';
-        if (name) {
-          const el = document.querySelector('.credit .val');
-          if (el) el.textContent = '✨ ' + name + (title ? ' — ' + title : '');
-        }
-        console.log('✓ my_info loaded:', MY_INFO);
+    // ── STEP 1: get MY profile ───────────────────────────────────────────
+    MY_INFO = await tryFetch(STEP1_URL, { method: 'POST' });
+
+    if (MY_INFO) {
+      console.log('[step-1 full response]', JSON.stringify(MY_INFO));
+      const name  = MY_INFO?.profile?.fullname || MY_INFO?.fullname || '';
+      const title = MY_INFO?.profile?.title    || MY_INFO?.title    || '';
+      if (name) {
+        const el = document.querySelector('.credit .val');
+        if (el) el.textContent = '✨ ' + name + (title ? ' — ' + title : '');
       }
-    } catch (e) {
-      console.warn('step-1 failed (CORS or network):', e.message);
+
+      // ── Try to find friend data INSIDE step-1 response first ──────────
+      const myName = MY_INFO?.profile?.fullname || MY_INFO?.fullname || '';
+      const embedded = deepFindContact(MY_INFO, myName, 0);
+      if (embedded) {
+        console.log('[friend found inside step-1]', embedded);
+        mergeFriend(embedded);
+      }
+    } else {
+      console.warn('[step-1] failed or no response');
     }
 
-    // Step 0: find real friend data
-    for (const url of FRIEND_ENDPOINTS) {
-      try {
-        const r = await fetch(url);
-        if (!r.ok) continue;
-        const data = await r.json();
-        if (!data || typeof data !== 'object') continue;
+    // ── STEP 0: hunt for friend data via multiple endpoint strategies ────
+    const myQuestId = MY_INFO?.quest_id || '';
 
-        let improved = false;
-        for (const [k, v] of Object.entries(data)) {
-          if (v && !FAKE.has(String(v))) {
-            FRIEND_INFO[k] = v;
-            if (['phone','email','zalo','zalo_name','facebook'].includes(k)) improved = true;
-          }
-        }
-        if (improved) {
-          console.log('✓ real friend data from:', url.split('/').slice(-2).join('/'));
-          break;
-        }
-      } catch (e) { /* continue */ }
+    // Build candidate endpoints — static + dynamic (using live quest_id)
+    const candidates = [
+      // Authenticated quest-level endpoints
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1`, 'GET'],
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/context`, 'GET'],
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend-info`, 'GET'],
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend`, 'GET'],
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/tang`, 'GET'],
+      [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/friend`, 'GET'],
+      // Lookup by friend's quest_id
+      [BASE+`/lop-hoc/api/quest/${F_QUEST}`, 'GET'],
+      [BASE+`/lop-hoc/api/share/${F_QUEST}`, 'GET'],
+      [BASE+`/api/public/quest/${F_QUEST}`, 'GET'],
+      // Lookup by friend's student ID
+      [BASE+`/lop-hoc/api/students/${F_ID}`, 'GET'],
+      [BASE+`/lop-hoc/api/profiles/${F_ID}`, 'GET'],
+      // Dynamic: use live quest_id from step-1 response
+      ...(myQuestId ? [
+        [BASE+`/api/bai-tap/${MY_ID}/${MY_TOKEN}/tuan-1/quest-1/friend?quest_id=${myQuestId}`, 'GET'],
+        [BASE+`/lop-hoc/api/quest-result/${myQuestId}`, 'GET'],
+      ] : []),
+    ];
+
+    // Also try step-1 POST with body hinting at the friend
+    const postBodies = [
+      JSON.stringify({ friend_quest_id: F_QUEST }),
+      JSON.stringify({ friend_id: F_ID }),
+      JSON.stringify({ tang_cho: F_QUEST }),
+    ];
+
+    let found = false;
+
+    for (const [url, method] of candidates) {
+      if (found) break;
+      const data = await tryFetch(url, { method });
+      if (!data) continue;
+      console.log(`[${url.split('/').slice(-2).join('/')}]`, data);
+      if (mergeFriend(data)) { found = true; console.log('[✓ friend data from]', url); break; }
+      // Also deep-scan the response
+      const nested = deepFindContact(data, MY_INFO?.profile?.fullname || '', 0);
+      if (nested && mergeFriend(nested)) { found = true; console.log('[✓ friend nested in]', url); break; }
     }
 
-    // Update contact DOM
+    if (!found) {
+      // Last resort: try step-1 POST with friend-hinting bodies
+      for (const body of postBodies) {
+        const data = await tryFetch(STEP1_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        if (!data) continue;
+        console.log('[step-1 with body]', body, data);
+        const nested = deepFindContact(data, MY_INFO?.profile?.fullname || '', 0);
+        if (nested && mergeFriend(nested)) { found = true; break; }
+        if (mergeFriend(data)) { found = true; break; }
+      }
+    }
+
+    // ── Update DOM ───────────────────────────────────────────────────────
     setDone('c-phone', FRIEND_INFO.phone);
     setDone('c-email', FRIEND_INFO.email);
     setDone('c-fb',    FRIEND_INFO.facebook || FRIEND_INFO.facebook_url);
     setDone('c-zalo',  FRIEND_INFO.zalo_name || FRIEND_INFO.zalo);
 
-    console.log('✓ friend_info:', FRIEND_INFO);
+    console.log('[final friend_info]', FRIEND_INFO);
   }
 
   document.addEventListener('DOMContentLoaded', initPage);
